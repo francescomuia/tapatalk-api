@@ -1,5 +1,6 @@
 package it.fmuia.apps.tapatalkapi;
 
-public class Tapatalk {
-
+public enum Operation
+{
+	ADD,REMOVE;
 }
