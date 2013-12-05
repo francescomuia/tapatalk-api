@@ -4,17 +4,19 @@ import it.fmuia.apps.tapatalkapi.bean.Config;
 import it.fmuia.apps.tapatalkapi.bean.InboxStat;
 import it.fmuia.apps.tapatalkapi.bean.OnlineUsers;
 import it.fmuia.apps.tapatalkapi.bean.RecommendedUsers;
+import it.fmuia.apps.tapatalkapi.bean.Topics;
 import it.fmuia.apps.tapatalkapi.bean.User;
 import it.fmuia.apps.tapatalkapi.bean.UserPosts;
-import it.fmuia.apps.tapatalkapi.bean.UserTopics;
 import it.fmuia.apps.tapatalkapi.exception.LoginException;
+import it.fmuia.apps.tapatalkapi.exception.TapatalkApiException;
+import it.fmuia.apps.tapatalkapi.exception.TapatalkMappingException;
 import it.fmuia.apps.tapatalkapi.exception.UnsupportedFunction;
 import it.fmuia.apps.tapatalkapi.methods.UserFunction;
 
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
 import java.net.URL;
-import java.security.NoSuchAlgorithmException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,8 +34,6 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 import org.apache.ws.commons.util.Base64;
-import org.apache.ws.commons.util.Base64.DecodingException;
-import org.apache.xmlrpc.XmlRpcException;
 import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 
@@ -55,7 +55,7 @@ public class UserService extends TapatalkBaseService
 		super(client, forumConfig);
 	}
 
-	public boolean ignoreUser(String userId, Operation op)
+	public boolean ignoreUser(String userId, Operation op) throws TapatalkApiException
 	{
 		HashMap<String, Object> result = this.invokeFuntion(UserFunction.IGNORE_USER, new Object[]
 		{ userId, op.ordinal() });
@@ -81,18 +81,18 @@ public class UserService extends TapatalkBaseService
 	 * @param numberOfrows
 	 * @return
 	 */
+	@SuppressWarnings("unchecked")
 	public List<User> searchUser(String keywords, int page, int numberOfrows)
 	{
 		try
 		{
 			HashMap<String, Object> results = this.invokeFuntion(UserFunction.SEARCH_USER, new Object[]
-			{ keywords.getBytes(), page, numberOfrows });
-			@SuppressWarnings("unchecked")
+			{ keywords.getBytes(Charset.defaultCharset()), page, numberOfrows });
 			Object[] lists = (Object[]) results.get("list");
 			List<User> users = new ArrayList<User>();
 			for (Object data : lists)
 			{
-				users.add(ResultsMapper.mapResult(User.class, (HashMap) data));
+				users.add(ResultsMapper.mapResult(User.class, (HashMap<String, Object>) data));
 			}
 			return users;
 		}
@@ -108,8 +108,9 @@ public class UserService extends TapatalkBaseService
 	 * support this function. It will return 20 users at default without any
 	 * @param mode
 	 * @return
+	 * @throws TapatalkApiException
 	 */
-	public RecommendedUsers getRecommendedUser(UserType mode)
+	public RecommendedUsers getRecommendedUser(UserType mode) throws TapatalkApiException
 	{
 		return this.getRecommendedUser(1, 20, mode);
 	}
@@ -123,8 +124,9 @@ public class UserService extends TapatalkBaseService
 	 * @param numberOfResults
 	 * @param mode
 	 * @return
+	 * @throws TapatalkApiException
 	 */
-	public RecommendedUsers getRecommendedUser(int page, int numberOfResults, UserType mode)
+	public RecommendedUsers getRecommendedUser(int page, int numberOfResults, UserType mode) throws TapatalkApiException
 	{
 
 		RecommendedUsers recommendedUsers = this.invokeFuntion(UserFunction.GET_RECOMMENDED_USER, RecommendedUsers.class, new Object[]
@@ -138,22 +140,23 @@ public class UserService extends TapatalkBaseService
 	 * @param username
 	 * @param userId
 	 * @return
+	 * @throws TapatalkApiException
 	 */
 	@SuppressWarnings("unchecked")
-	public List<UserPosts> getUserReplyPost(String username, String userId)
+	public List<UserPosts> getUserReplyPost(String username, String userId) throws TapatalkApiException
 	{
 		try
 		{
 			Object[] results = null;
 			if (userId != null)
 			{
-				results = (Object[]) this.getClient().execute(UserFunction.GET_USER_REPLY_POST, new Object[]
+				results = this.invokeFuntion(UserFunction.GET_USER_REPLY_POST, new Object[]
 				{ new byte[0], userId });
 			}
 			else
 			{
-				results = (Object[]) this.getClient().execute(UserFunction.GET_USER_REPLY_POST, new Object[]
-				{ username.getBytes() });
+				results = this.invokeFuntion(UserFunction.GET_USER_REPLY_POST, new Object[]
+				{ username.getBytes(Charset.defaultCharset()) });
 			}
 			List<UserPosts> topics = new ArrayList<UserPosts>();
 			for (Object result : results)
@@ -164,62 +167,55 @@ public class UserService extends TapatalkBaseService
 			}
 			return topics;
 		}
-		catch (XmlRpcException e)
+		catch (TapatalkMappingException e)
 		{
 			throw new RuntimeException("Si è verificato un errore durante la chiamata", e);
-		}
-		catch (Exception e)
-		{
-			throw new RuntimeException("Si è verificato un errore durante il mapping", e);
 		}
 	}
 
 	/**
 	 * Returns a list of topics (max 50) the user has previously created. Sorted
 	 * by last reply time
+	 * @throws TapatalkApiException
 	 */
 	@SuppressWarnings("unchecked")
-	public List<UserTopics> getUserTopic(String username, String userId)
+	public List<Topics> getUserTopic(String username, String userId) throws TapatalkApiException
 	{
 		try
 		{
 			Object[] results = null;
 			if (userId != null)
 			{
-				results = (Object[]) this.getClient().execute(UserFunction.GET_USER_TOPIC, new Object[]
+				results = (Object[]) this.invokeFuntion(UserFunction.GET_USER_TOPIC, new Object[]
 				{ new byte[0], userId });
 			}
 			else
 			{
-				results = (Object[]) this.getClient().execute(UserFunction.GET_USER_TOPIC, new Object[]
-				{ username.getBytes() });
+				results = (Object[]) this.invokeFuntion(UserFunction.GET_USER_TOPIC, new Object[]
+				{ username.getBytes(Charset.defaultCharset()) });
 			}
-			List<UserTopics> topics = new ArrayList<UserTopics>();
+			List<Topics> topics = new ArrayList<Topics>();
 			for (Object result : results)
 			{
 				HashMap<String, Object> res = (HashMap<String, Object>) result;
-				UserTopics usersTopics = ResultsMapper.mapResult(UserTopics.class, res);
+				Topics usersTopics = ResultsMapper.mapResult(Topics.class, res);
 				topics.add(usersTopics);
 			}
 			return topics;
 		}
-		catch (XmlRpcException e)
+		catch (TapatalkMappingException e)
 		{
 			throw new RuntimeException("Si è verificato un errore durante la chiamata", e);
 		}
-		catch (Exception e)
-		{
-			throw new RuntimeException("Si è verificato un errore durante il mapping", e);
-		}
 	}
 
-	public User getUserInfoByUsername(String username)
+	public User getUserInfoByUsername(String username) throws TapatalkApiException
 	{
 		return this.invokeFuntion(UserFunction.GET_USER_INFO, User.class, new Object[]
-		{ username.getBytes(), "" });
+		{ username.getBytes(Charset.defaultCharset()), "" });
 	}
 
-	public User getUserInfoByUserId(String userId)
+	public User getUserInfoByUserId(String userId) throws TapatalkApiException
 	{
 		return this.invokeFuntion(UserFunction.GET_USER_INFO, User.class, new Object[]
 		{ "", userId });
@@ -229,8 +225,9 @@ public class UserService extends TapatalkBaseService
 	 * Returns a list of user who are currently online. You can specify forum
 	 * and thread to limit the users you need.
 	 * @return
+	 * @throws TapatalkApiException
 	 */
-	public OnlineUsers getOnlineUsers()
+	public OnlineUsers getOnlineUsers() throws TapatalkApiException
 	{
 		return this.invokeFuntion(UserFunction.GET_ONLINE_USERS, OnlineUsers.class, new Object[0]);
 	}
@@ -239,8 +236,9 @@ public class UserService extends TapatalkBaseService
 	 * Returns a list of user who are currently online. You can specify forum
 	 * and thread to limit the users you need.
 	 * @return
+	 * @throws TapatalkApiException
 	 */
-	public OnlineUsers getOnlineUsers(String id, Area area, int page, int numberOfresults)
+	public OnlineUsers getOnlineUsers(String id, Area area, int page, int numberOfresults) throws TapatalkApiException
 	{
 		String idParam = "";
 		String areaParam = "";
@@ -258,17 +256,12 @@ public class UserService extends TapatalkBaseService
 	/**
 	 * 
 	 * @return true if succed
+	 * @throws TapatalkApiException
 	 */
-	public boolean logoutUser()
+	public boolean logoutUser() throws TapatalkApiException
 	{
-		try
-		{
-			return (Boolean) this.getClient().execute(UserFunction.LOGOUT_USER, new Object[0]);
-		}
-		catch (XmlRpcException e)
-		{
-			throw new RuntimeException("Si è verificato un errore durante l'invocazione della funzione", e);
-		}
+		Boolean result = this.invokeFuntion(UserFunction.LOGOUT_USER, new Object[0]);
+		return result;
 	}
 
 	/**
@@ -276,8 +269,9 @@ public class UserService extends TapatalkBaseService
 	 * In API Level 3 there is no input parameter need to pass into this
 	 * function.
 	 * @return
+	 * @throws TapatalkApiException
 	 */
-	public InboxStat getInboxStat()
+	public InboxStat getInboxStat() throws TapatalkApiException
 	{
 		return this.invokeFuntion(UserFunction.GET_INBOX_STAT, InboxStat.class, new Object[0]);
 	}
@@ -288,10 +282,9 @@ public class UserService extends TapatalkBaseService
 	 * session. ** DO NOT include HTTP Cookies in the request header
 	 * @return
 	 * @throws LoginException
-	 * @throws NoSuchAlgorithmException
-	 * @throws DecodingException **
+	 * @throws TapatalkApiException
 	 */
-	public User login(String loginName, String password) throws LoginException
+	public User login(String loginName, String password) throws LoginException, TapatalkApiException
 	{
 		LOGGER.debug("LOGIN API 3");
 		return this.login(loginName, password, false, null, true);
@@ -302,27 +295,29 @@ public class UserService extends TapatalkBaseService
 	 * and pass it back to server for all subsequence calls to maintain user
 	 * session. ** DO NOT include HTTP Cookies in the request header
 	 * @return
-	 * @throws LoginException **
+	 * @throws LoginException
+	 * @throws TapatalkApiException **
 	 */
-	public User login(String loginName, String password, boolean anonymous, String push) throws LoginException
+	public User login(String loginName, String password, boolean anonymous, String push) throws LoginException, TapatalkApiException
 	{
 		LOGGER.debug("LOGIN API 4");
 		return this.login(loginName, password, anonymous, push, false);
 	}
 
-	private User login(String loginName, String password, boolean anonymous, String push, boolean apiVersion3) throws LoginException
+	private User login(String loginName, String password, boolean anonymous, String push, boolean apiVersion3) throws LoginException,
+			TapatalkApiException
 	{
 		byte[] encodedPassword = null;
 		if (this.getForumConfig().getSupportMd5() != null && this.getForumConfig().getSupportMd5().equals("1"))
 		{
 			LOGGER.debug("MD5 ENCRIPTION");
-			encodedPassword = DigestUtils.md5Hex(password).getBytes();
+			encodedPassword = DigestUtils.md5Hex(password).getBytes(Charset.defaultCharset());
 
 		}
 		else if (this.getForumConfig().getSupportSha1() != null && this.getForumConfig().getSupportSha1().equals("1"))
 		{
 			LOGGER.debug("SHA1 ENCRIPTION");
-			encodedPassword = DigestUtils.shaHex(password).getBytes();
+			encodedPassword = DigestUtils.shaHex(password).getBytes(Charset.defaultCharset());
 
 		}
 		else
@@ -345,7 +340,7 @@ public class UserService extends TapatalkBaseService
 		}
 		if (!(Boolean) result.get("result"))
 		{
-			throw new LoginException(new String((byte[]) result.get("result_text")));
+			throw new LoginException(new String((byte[]) result.get("result_text"), Charset.defaultCharset()));
 		}
 		else
 		{
@@ -379,7 +374,7 @@ public class UserService extends TapatalkBaseService
 				URL url = ((XmlRpcClientConfigImpl) this.getClient().getClientConfig()).getServerURL();
 				String urlExternalForm = url.toExternalForm();
 				String path = urlExternalForm.substring(0, urlExternalForm.lastIndexOf("/") + 1) + AVATAR_CLIENT_PAGE;
-				String usernameBase64 = Base64.encode(username.getBytes());
+				String usernameBase64 = Base64.encode(username.getBytes(Charset.defaultCharset()));
 				URIBuilder builder = new URIBuilder();
 				builder.setPort(url.getPort()).setPath(path).setParameter("user_id", userId).setParameter("username", usernameBase64);
 				HttpGet get = new HttpGet(builder.build());

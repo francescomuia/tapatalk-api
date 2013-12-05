@@ -3,9 +3,9 @@ package it.fmuia.apps.tapatalkapi.bean;
 public class Stats
 {
 	private int topic;
-	
+
 	private int post;
-	
+
 	private int user;
 
 	public int getTopic()

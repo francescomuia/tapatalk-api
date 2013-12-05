@@ -29,6 +29,8 @@ public class TapatalkServices
 
 	private UserService userService;
 
+	private TopicService topicServices;
+
 	public TapatalkServices(String url) throws MalformedURLException
 	{
 		this(new URL(url));
@@ -44,8 +46,7 @@ public class TapatalkServices
 		XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
 		config.setServerURL(url);
 
-		final XmlRpcTransportFactory transportFactory = new XmlRpcSun15HttpTransportFactory(
-				client)
+		final XmlRpcTransportFactory transportFactory = new XmlRpcSun15HttpTransportFactory(client)
 		{
 			public XmlRpcTransport getTransport()
 			{
@@ -59,12 +60,12 @@ public class TapatalkServices
 		this.setForumConfig(getConfig());
 		this.forumService = new ForumService(getClient(), getForumConfig());
 		this.userService = new UserService(getClient(), getForumConfig());
+		this.setTopicServices(new TopicService(getClient(), getForumConfig()));
 	}
 
 	private void initLogger()
 	{
-		DOMConfigurator.configure(TapatalkServices.class
-				.getResource("/config/log4j.xml"));
+		DOMConfigurator.configure(TapatalkServices.class.getResource("/config/log4j.xml"));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -74,13 +75,11 @@ public class TapatalkServices
 		try
 		{
 
-			result = (HashMap<String, Object>) this.getClient().execute(
-					ForumFunction.GET_CONFIG, new Object[0]);
+			result = (HashMap<String, Object>) this.getClient().execute(ForumFunction.GET_CONFIG, new Object[0]);
 		}
 		catch (XmlRpcException e1)
 		{
-			throw new RuntimeException("Errore durante la chiamata del metodo "
-					+ ForumFunction.GET_CONFIG, e1);
+			throw new RuntimeException("Errore durante la chiamata del metodo " + ForumFunction.GET_CONFIG, e1);
 		}
 		try
 		{
@@ -88,8 +87,7 @@ public class TapatalkServices
 		}
 		catch (Exception e)
 		{
-			throw new RuntimeException(
-					"Errore durante il mapping del risultato", e);
+			throw new RuntimeException("Errore durante il mapping del risultato", e);
 		}
 	}
 
@@ -131,5 +129,15 @@ public class TapatalkServices
 	public void setUserService(UserService userService)
 	{
 		this.userService = userService;
+	}
+
+	public TopicService getTopicServices()
+	{
+		return topicServices;
+	}
+
+	public void setTopicServices(TopicService topicServices)
+	{
+		this.topicServices = topicServices;
 	}
 }

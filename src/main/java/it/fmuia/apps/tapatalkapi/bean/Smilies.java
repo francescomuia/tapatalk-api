@@ -5,26 +5,19 @@ import java.util.List;
 
 public class Smilies
 {
+	private String category;
+
 	private List<Smilie> smilies;
 
-	private String category;
-	
-	public Smilies(){}
-	
-	public Smilies(String category)
+	public Smilies()
 	{
-		this.category = category;
-		this.smilies = new ArrayList<Smilie>();
-	}
-	
-	public List<Smilie> getSmilies()
-	{
-		return smilies;
 	}
 
-	public void setSmilies(List<Smilie> smilies)
+	public Smilies(String category)
 	{
-		this.smilies = smilies;
+
+		this.category = category;
+		this.smilies = new ArrayList<Smilie>();
 	}
 
 	public String getCategory()
@@ -37,14 +30,24 @@ public class Smilies
 		this.category = category;
 	}
 
+	public List<Smilie> getSmilies()
+	{
+		return smilies;
+	}
+
+	public void setSmilies(List<Smilie> smilies)
+	{
+		this.smilies = smilies;
+	}
+
 	@Override
 	public String toString()
 	{
 		StringBuilder builder = new StringBuilder();
-		builder.append("Smilies [smilies=");
-		builder.append(smilies);
-		builder.append(", category=");
+		builder.append("Smilies [category=");
 		builder.append(category);
+		builder.append(", smilies=");
+		builder.append(smilies);
 		builder.append("]");
 		return builder.toString();
 	}

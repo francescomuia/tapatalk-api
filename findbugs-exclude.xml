@@ -1,0 +1,11 @@
+<FindBugsFilter>
+
+	<!-- All bugs in test classes, except for JUnit-specific bugs -->
+	<Match>
+		<Class name="~it.fmuia.apps.tapatalkapi.bean.*" />
+
+		<Bug code="EI,EI2" />
+
+	</Match>
+
+</FindBugsFilter>

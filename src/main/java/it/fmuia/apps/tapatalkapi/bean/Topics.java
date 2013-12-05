@@ -1,10 +1,10 @@
 package it.fmuia.apps.tapatalkapi.bean;
 
-import java.util.Date;
-
 import it.fmuia.apps.tapatalkapi.PropertyName;
 
-public class UserTopics
+import java.util.Date;
+
+public class Topics
 {
 	@PropertyName(name = "forum_id")
 	private String forumId;
@@ -243,5 +243,75 @@ public class UserTopics
 		builder.append(shortContent);
 		builder.append("]");
 		return builder.toString();
+	}
+
+	public String getPostAuthorId()
+	{
+		return postAuthorId;
+	}
+
+	public void setPostAuthorId(String postAuthorId)
+	{
+		this.postAuthorId = postAuthorId;
+	}
+
+	public String getTimestamp()
+	{
+		return timestamp;
+	}
+
+	public void setTimestamp(String timestamp)
+	{
+		this.timestamp = timestamp;
+	}
+
+	public boolean isCanClose()
+	{
+		return canClose;
+	}
+
+	public void setCanClose(boolean canClose)
+	{
+		this.canClose = canClose;
+	}
+
+	public boolean isCanSubscribe()
+	{
+		return canSubscribe;
+	}
+
+	public void setCanSubscribe(boolean canSubscribe)
+	{
+		this.canSubscribe = canSubscribe;
+	}
+
+	public boolean isApproved()
+	{
+		return isApproved;
+	}
+
+	public void setApproved(boolean isApproved)
+	{
+		this.isApproved = isApproved;
+	}
+
+	public String getPostAuthorName()
+	{
+		return postAuthorName;
+	}
+
+	public void setPostAuthorName(String postAuthorName)
+	{
+		this.postAuthorName = postAuthorName;
+	}
+
+	public Date getPostTime()
+	{
+		return postTime;
+	}
+
+	public void setPostTime(Date postTime)
+	{
+		this.postTime = postTime;
 	}
 }

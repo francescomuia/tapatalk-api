@@ -11,7 +11,8 @@ public class Smilie
 	private String code;
 
 	/**
-	 * smiley url(it may be relative path and need add forum root path to complete the url)
+	 * smiley url(it may be relative path and need add forum root path to
+	 * complete the url)
 	 */
 	@PropertyName(name = "url")
 	private String url;

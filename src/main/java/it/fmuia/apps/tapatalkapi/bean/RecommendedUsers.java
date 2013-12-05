@@ -1,8 +1,8 @@
 package it.fmuia.apps.tapatalkapi.bean;
 
-import java.util.Arrays;
-
 import it.fmuia.apps.tapatalkapi.PropertyName;
+
+import java.util.Arrays;
 
 public class RecommendedUsers
 {

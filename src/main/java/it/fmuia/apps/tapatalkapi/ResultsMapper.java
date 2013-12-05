@@ -5,7 +5,9 @@ import it.fmuia.apps.tapatalkapi.bean.Forum;
 import it.fmuia.apps.tapatalkapi.bean.OnlineUser;
 import it.fmuia.apps.tapatalkapi.bean.PartecipatedForum;
 import it.fmuia.apps.tapatalkapi.bean.PushType;
+import it.fmuia.apps.tapatalkapi.bean.Smilie;
 import it.fmuia.apps.tapatalkapi.bean.Stats;
+import it.fmuia.apps.tapatalkapi.exception.TapatalkMappingException;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
@@ -32,6 +34,7 @@ public class ResultsMapper
 		knowClasses.add(PushType.class);
 		knowClasses.add(OnlineUser.class);
 		knowClasses.add(Stats.class);
+		knowClasses.add(Smilie.class);
 	}
 
 	private static Field getField(Class<?> aClass, String name)
@@ -45,8 +48,7 @@ public class ResultsMapper
 			}
 			else if (field.isAnnotationPresent(PropertyName.class))
 			{
-				PropertyName propertyName = field
-						.getAnnotation(PropertyName.class);
+				PropertyName propertyName = field.getAnnotation(PropertyName.class);
 				if (propertyName.name().equals(name))
 				{
 					return field;
@@ -56,27 +58,32 @@ public class ResultsMapper
 		return null;
 	}
 
-	public static <T> T mapResult(Class<T> result, Map<String, Object> data)
-			throws Exception
+	public static <T> T mapResult(Class<T> result, Map<String, Object> data) throws TapatalkMappingException
 	{
-
-		T objResult = result.newInstance();
-		Iterator<Map.Entry<String, Object>> iterator = data.entrySet()
-				.iterator();
-		while (iterator.hasNext())
+		try
 		{
-			Map.Entry<String, Object> entry = iterator.next();
-			Field aField = ResultsMapper.getField(result, entry.getKey());
-			if (aField != null)
+			T objResult = result.newInstance();
+			Iterator<Map.Entry<String, Object>> iterator = data.entrySet().iterator();
+			while (iterator.hasNext())
 			{
-				ResultsMapper
-						.setFieldValue(aField, objResult, entry.getValue());
-			}else
-			{
-				LOGGER.debug("FIELD NOT FOUND [ key = "+entry.getKey()+", value = "+entry.getValue()+", class = "+entry.getValue().getClass()+"]");
+				Map.Entry<String, Object> entry = iterator.next();
+				Field aField = ResultsMapper.getField(result, entry.getKey());
+				if (aField != null)
+				{
+					ResultsMapper.setFieldValue(aField, objResult, entry.getValue());
+				}
+				else
+				{
+					LOGGER.debug("FIELD NOT FOUND [ key = " + entry.getKey() + ", value = " + entry.getValue() + ", class = "
+							+ entry.getValue().getClass() + "]");
+				}
 			}
+			return objResult;
 		}
-		return objResult;
+		catch (Exception e)
+		{
+			throw new TapatalkMappingException(e);
+		}
 	}
 
 	private static Constructor<?> getConstructor(Class<?> aClass, Class<?> param)
@@ -91,8 +98,8 @@ public class ResultsMapper
 		}
 	}
 
-	public static void setFieldValue(Field field, Object obj, Object value)
-			throws Exception
+	@SuppressWarnings("unchecked")
+	public static void setFieldValue(Field field, Object obj, Object value) throws Exception
 	{
 		Class<?> fieldClass = null;
 		if (field.getType().isPrimitive())
@@ -113,30 +120,29 @@ public class ResultsMapper
 			if (fieldClass.isArray() && value.getClass().isArray())
 			{
 				LOGGER.debug("FIELDS ARRAYS");
-				if(ResultsMapper.knowClasses.contains(fieldClass.getComponentType()))
+				if (ResultsMapper.knowClasses.contains(fieldClass.getComponentType()))
 				{
 					LOGGER.debug("FIELDS CLASS IS KNOW");
 					int length = Array.getLength(value);
 					Object fieldValueArray = Array.newInstance(fieldClass.getComponentType(), length);
-					for(int i = 0; i < length; i++)
+					for (int i = 0; i < length; i++)
 					{
-						 Object data = Array.get(value, i);
-						 Object objFieldValue = ResultsMapper.mapResult(fieldClass.getComponentType(), (Map<String,Object>)data);
-						 Array.set(fieldValueArray, i, objFieldValue);
+						Object data = Array.get(value, i);
+						Object objFieldValue = ResultsMapper.mapResult(fieldClass.getComponentType(), (Map<String, Object>) data);
+						Array.set(fieldValueArray, i, objFieldValue);
 					}
 					field.set(obj, fieldValueArray);
 				}
-				
+
 			}
 			else if (ResultsMapper.knowClasses.contains(fieldClass))
 			{
-				Object objFieldValue = ResultsMapper.mapResult(fieldClass,(Map<String,Object>) value);
+				Object objFieldValue = ResultsMapper.mapResult(fieldClass, (Map<String, Object>) value);
 				field.set(obj, objFieldValue);
 			}
 			else
 			{
-				Constructor<?> constructor = ResultsMapper.getConstructor(
-						fieldClass, value.getClass());
+				Constructor<?> constructor = ResultsMapper.getConstructor(fieldClass, value.getClass());
 				if (constructor != null)
 				{
 					Object fieldValue = constructor.newInstance(value);
@@ -144,8 +150,8 @@ public class ResultsMapper
 				}
 				else
 				{
-					LOGGER.debug("CLASSI NON CONGRUE [ campo = "+field.getName()+", classe campo = " + field.getType()
-							+ ", classe valore = " + value.getClass()+", valore = "+value);
+					LOGGER.debug("CLASSI NON CONGRUE [ campo = " + field.getName() + ", classe campo = " + field.getType() + ", classe valore = "
+							+ value.getClass() + ", valore = " + value);
 				}
 			}
 		}

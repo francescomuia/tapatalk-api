@@ -4,7 +4,7 @@ import it.fmuia.apps.tapatalkapi.bean.InboxStat;
 import it.fmuia.apps.tapatalkapi.bean.RecommendedUsers;
 import it.fmuia.apps.tapatalkapi.bean.User;
 import it.fmuia.apps.tapatalkapi.bean.UserPosts;
-import it.fmuia.apps.tapatalkapi.bean.UserTopics;
+import it.fmuia.apps.tapatalkapi.bean.Topics;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -98,7 +98,7 @@ public class UserServiceTest
 		// TapatalkServices service = new TapatalkServices(
 		// "http://forum.html.it/forum/mobiquo/mobiquo.php");
 		service.getUserService().login("francesco.muia", "tiamobibi");
-		List<UserTopics> topics = service.getUserService().getUserTopic("francesco.muia", "6847");
+		List<Topics> topics = service.getUserService().getUserTopic("francesco.muia", "6847");
 		System.out.println(topics);
 
 	}

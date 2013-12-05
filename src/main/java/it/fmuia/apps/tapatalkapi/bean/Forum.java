@@ -1,9 +1,8 @@
 package it.fmuia.apps.tapatalkapi.bean;
 
-import java.util.Arrays;
-import java.util.HashMap;
-
 import it.fmuia.apps.tapatalkapi.PropertyName;
+
+import java.util.Arrays;
 
 public class Forum
 {
@@ -226,7 +225,6 @@ public class Forum
 
 	public void setChild(Forum[] child)
 	{
-		System.out.println("SETTO CHILD "+child);
 		this.child = child;
 	}
 }

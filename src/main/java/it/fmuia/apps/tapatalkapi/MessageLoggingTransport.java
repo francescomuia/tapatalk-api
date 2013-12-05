@@ -6,8 +6,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 import org.apache.xmlrpc.client.XmlRpcClient;
@@ -19,8 +19,7 @@ import org.xml.sax.SAXException;
 public class MessageLoggingTransport extends XmlRpcSunHttpTransport
 {
 
-	private static final Logger log = Logger
-			.getLogger(MessageLoggingTransport.class.getName());
+	private static final Logger log = Logger.getLogger(MessageLoggingTransport.class.getName());
 
 	/**
 	 * Default constructor
@@ -31,19 +30,17 @@ public class MessageLoggingTransport extends XmlRpcSunHttpTransport
 	public MessageLoggingTransport(XmlRpcClient pClient)
 	{
 		super(pClient);
-		// TODO Auto-generated constructor stub
 	}
 
 	/**
 	 * Dumps outgoing XML-RPC requests to the log
 	 */
 	@Override
-	protected void writeRequest(final XmlRpcStreamTransport.ReqWriter pWriter)
-			throws IOException, XmlRpcException, SAXException
+	protected void writeRequest(final XmlRpcStreamTransport.ReqWriter pWriter) throws IOException, XmlRpcException, SAXException
 	{
 		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		pWriter.write(baos);
-		log.info(baos.toString());
+		log.info(baos.toString(Charset.defaultCharset().name()));
 		super.writeRequest(pWriter);
 	}
 
@@ -51,15 +48,13 @@ public class MessageLoggingTransport extends XmlRpcSunHttpTransport
 	 * Dumps incoming XML-RPC responses to the log
 	 */
 	@Override
-	protected Object readResponse(XmlRpcStreamRequestConfig pConfig,
-			InputStream pStream) throws XmlRpcException
+	protected Object readResponse(XmlRpcStreamRequestConfig pConfig, InputStream pStream) throws XmlRpcException
 	{
 		final StringBuffer sb = new StringBuffer();
 
 		try
 		{
-			final BufferedReader reader = new BufferedReader(
-					new InputStreamReader(pStream));
+			final BufferedReader reader = new BufferedReader(new InputStreamReader(pStream,Charset.defaultCharset()));
 			String line = reader.readLine();
 			while (line != null)
 			{
@@ -74,8 +69,7 @@ public class MessageLoggingTransport extends XmlRpcSunHttpTransport
 
 		log.info(sb.toString());
 
-		final ByteArrayInputStream bais = new ByteArrayInputStream(sb
-				.toString().getBytes());
+		final ByteArrayInputStream bais = new ByteArrayInputStream(sb.toString().getBytes(Charset.defaultCharset()));
 		return super.readResponse(pConfig, bais);
 	}
 }

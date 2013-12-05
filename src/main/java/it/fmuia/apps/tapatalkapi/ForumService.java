@@ -6,11 +6,12 @@ import it.fmuia.apps.tapatalkapi.bean.Forum;
 import it.fmuia.apps.tapatalkapi.bean.PartecipatedForum;
 import it.fmuia.apps.tapatalkapi.bean.Smilie;
 import it.fmuia.apps.tapatalkapi.bean.Smilies;
+import it.fmuia.apps.tapatalkapi.exception.TapatalkApiException;
+import it.fmuia.apps.tapatalkapi.exception.TapatalkMappingException;
 import it.fmuia.apps.tapatalkapi.exception.UnsupportedFunction;
 import it.fmuia.apps.tapatalkapi.methods.ForumFunction;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -20,7 +21,6 @@ import java.util.Map;
 import javax.xml.bind.DatatypeConverter;
 
 import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
 import org.apache.xmlrpc.client.XmlRpcClient;
 
 public class ForumService extends TapatalkBaseService
@@ -37,11 +37,11 @@ public class ForumService extends TapatalkBaseService
 	 * required for this function and the sub-forum description. For Level 4,
 	 * forum description is omitted unless "return_description" is set to true
 	 * @return
+	 * @throws TapatalkApiException
 	 */
-	public Forum[] getForum()
+	public Forum[] getForum() throws TapatalkApiException
 	{
-		if (this.getForumConfig().getGetForum() != null
-				&& this.getForumConfig().getGetForum().equals("1"))
+		if (this.getForumConfig().getGetForum() != null && this.getForumConfig().getGetForum().equals("1"))
 		{
 			LOGGER.debug("INVOKE GET FORUM API 4");
 			return this.getForum(true, "");
@@ -49,8 +49,7 @@ public class ForumService extends TapatalkBaseService
 		else
 		{
 			LOGGER.debug("INVOKE GET FORUM API 3");
-			return this.invokeFuntionArray(ForumFunction.GET_FORUM,
-					Forum.class, new Object[0]);
+			return this.invokeFuntionArray(ForumFunction.GET_FORUM, Forum.class, new Object[0]);
 		}
 	}
 
@@ -61,11 +60,11 @@ public class ForumService extends TapatalkBaseService
 	 * @param returnDescription
 	 * @param forumId
 	 * @return
+	 * @throws TapatalkApiException
 	 */
-	public Forum[] getForum(boolean returnDescription, String forumId)
+	public Forum[] getForum(boolean returnDescription, String forumId) throws TapatalkApiException
 	{
-		return this.invokeFuntionArray(ForumFunction.GET_FORUM, Forum.class,
-				returnDescription, forumId);
+		return this.invokeFuntionArray(ForumFunction.GET_FORUM, Forum.class, returnDescription, forumId);
 	}
 
 	/**
@@ -73,8 +72,9 @@ public class ForumService extends TapatalkBaseService
 	 * order by the latest date of participation.
 	 * @return
 	 * @throws UnsupportedFunction
+	 * @throws TapatalkApiException
 	 */
-	public PartecipatedForum getParticipatedForum() throws UnsupportedFunction
+	public PartecipatedForum getParticipatedForum() throws UnsupportedFunction, TapatalkApiException
 	{
 		if (this.getForumConfig().getGetParticipatedForum() == null)
 		{
@@ -83,24 +83,22 @@ public class ForumService extends TapatalkBaseService
 		else if (this.getForumConfig().getGetParticipatedForum().equals("1"))
 		{
 			LOGGER.debug("INVOKE GET PARTICIPATED");
-			return this.invokeFuntion(ForumFunction.GET_PARTICIPATED,
-					PartecipatedForum.class, new Object[0]);
+			return this.invokeFuntion(ForumFunction.GET_PARTICIPATED, PartecipatedForum.class, new Object[0]);
 		}
 		else
 		{
-			LOGGER.debug("PARTICIPATED NOT SUPPORTED");
-			return null;
+			throw new UnsupportedFunction();
 		}
 	}
 
 	/**
 	 * mark all the unread topics as read
 	 * @return result
+	 * @throws TapatalkApiException
 	 */
-	public boolean markAllAsRead()
+	public boolean markAllAsRead() throws TapatalkApiException
 	{
-		Map<String, Object> result = this
-				.invokeFuntion(ForumFunction.GET_MARK_ALL_AS_READ);
+		Map<String, Object> result = this.invokeFuntion(ForumFunction.GET_MARK_ALL_AS_READ);
 		return (Boolean) result.get("result");
 	}
 
@@ -108,16 +106,22 @@ public class ForumService extends TapatalkBaseService
 	 * mark all the unread topics as read
 	 * @param forumId
 	 * @return result
+	 * @throws TapatalkApiException
 	 */
-	public void markAllAsRead(String forumId)
+	public void markAllAsRead(String forumId) throws TapatalkApiException
 	{
-		Map<String, Object> result = this.invokeFuntion(
-				ForumFunction.GET_MARK_ALL_AS_READ, forumId);
+		Map<String, Object> result = this.invokeFuntion(ForumFunction.GET_MARK_ALL_AS_READ, forumId);
 		boolean success = (Boolean) result.get("result");
 		if (!success)
 		{
-			throw new RuntimeException(new String(
-					(byte[]) result.get("result_text")));
+			try
+			{
+				throw new RuntimeException(new String((byte[]) result.get("result_text"), "UTF-8"));
+			}
+			catch (UnsupportedEncodingException e)
+			{
+				throw new RuntimeException(e);
+			}
 		}
 	}
 
@@ -129,18 +133,24 @@ public class ForumService extends TapatalkBaseService
 	 * @param forumId
 	 * @param password
 	 * @return
+	 * @throws TapatalkApiException
 	 */
-	public void loginForum(String forumId, String password)
+	public void loginForum(String forumId, String password) throws TapatalkApiException
 	{
 		Map<String, Object> result;
 		byte[] encodedPassword = DatatypeConverter.parseBase64Binary(password);
-		result = this.invokeFuntion(ForumFunction.LOGIN_FORUM, forumId,
-				encodedPassword);
+		result = this.invokeFuntion(ForumFunction.LOGIN_FORUM, forumId, encodedPassword);
 		boolean res = (Boolean) result.get("result");
 		if (!res)
 		{
-			throw new RuntimeException(new String(
-					(byte[]) result.get("result_text")));
+			try
+			{
+				throw new RuntimeException(new String((byte[]) result.get("result_text"), "UTF-8"));
+			}
+			catch (UnsupportedEncodingException e)
+			{
+				throw new RuntimeException(e);
+			}
 		}
 	}
 
@@ -152,8 +162,9 @@ public class ForumService extends TapatalkBaseService
 	 * get_config that returns get_id_by_url = 1.
 	 * @param url
 	 * @return
+	 * @throws TapatalkApiException
 	 */
-	public String[] getIdByUrl(String url)
+	public String[] getIdByUrl(String url) throws TapatalkApiException
 	{
 		Map<String, Object> result;
 		result = this.invokeFuntion(ForumFunction.GET_ID_BY_URL, url);
@@ -164,74 +175,75 @@ public class ForumService extends TapatalkBaseService
 		return ret;
 	}
 
-	public BoardStat getBoardStat()
+	public BoardStat getBoardStat() throws TapatalkApiException
 	{
-		return this.invokeFuntion(ForumFunction.GET_BOARD_STAT,
-				BoardStat.class, new Object[0]);
+		return this.invokeFuntion(ForumFunction.GET_BOARD_STAT, BoardStat.class, new Object[]
+		{});
 	}
 
-	public Forum[] getForumStatus(String[] forumIds)
+	@SuppressWarnings("unchecked")
+	public Forum[] getForumStatus(String[] forumIds) throws TapatalkApiException, UnsupportedFunction
 	{
-		Map<String, Object> result;
-		try
+		if ("1".equals(this.getForumConfig().getGetForumStatus()))
 		{
-			result = (Map<String, Object>) this.getClient().execute(
-					ForumFunction.GET_FORUM_STATUS, new Object[]
-					{ forumIds });
-			Object[] forumsData = (Object[]) result.get("forums");
-			Forum[] forums = new Forum[forumsData.length];
-			for (int i = 0; i < forums.length; i++)
+			Map<String, Object> result;
+			try
 			{
-				forums[i] = ResultsMapper.mapResult(Forum.class,
-						(Map<String, Object>) forumsData[i]);
+				result = (Map<String, Object>) this.invokeFuntion(ForumFunction.GET_FORUM_STATUS, new Object[]
+				{ forumIds });
+				Object[] forumsData = (Object[]) result.get("forums");
+				Forum[] forums = new Forum[forumsData.length];
+				for (int i = 0; i < forums.length; i++)
+				{
+					forums[i] = ResultsMapper.mapResult(Forum.class, (Map<String, Object>) forumsData[i]);
+				}
+				return forums;
 			}
-			return forums;
+			catch (TapatalkMappingException e)
+			{
+				throw new RuntimeException("Errore durante l'invocazione del metodo " + ForumFunction.GET_FORUM_STATUS, e);
+			}
 		}
-		catch (XmlRpcException e)
+		else
 		{
-			throw new RuntimeException(
-					"Errore durante l'invocazione del metodo "
-							+ ForumFunction.GET_FORUM_STATUS, e);
-		}
-		catch (Exception e)
-		{
-			throw new RuntimeException(
-					"Errore durante il mapping del risultato", e);
+			throw new UnsupportedFunction();
 		}
 
 	}
 
-	public List<Smilies> getSmilies()
+	@SuppressWarnings("unchecked")
+	public List<Smilies> getSmilies() throws UnsupportedFunction
 	{
-		Map<String, Object> result = this.invokeFuntion(
-				ForumFunction.GET_SMILIES, new Object[0]);
-
-		HashMap<String, Object[]> smiles = (HashMap) result.get("list");
-		List<Smilies> smiliesList = new ArrayList<Smilies>();
-		Iterator<Map.Entry<String, Object[]>> iterator = smiles.entrySet()
-				.iterator();
-		while (iterator.hasNext())
+		if ("1".equals(this.getForumConfig().getGetSmilies()))
 		{
-			Map.Entry<String, Object[]> entry = iterator.next();
-			Smilies smilies = new Smilies(entry.getKey());
-			Object[] values = entry.getValue();
-			for (Object object : values)
+			try
 			{
-				HashMap<String, Object> data = (HashMap<String, Object>) object;
-				try
+				HashMap<String, HashMap<String, Object>> functionResults = this.invokeFuntion(ForumFunction.GET_SMILIES, new Object[0]);
+				HashMap<String, Object> map = functionResults.get("list");
+				Iterator<Map.Entry<String, Object>> enumeration = map.entrySet().iterator();
+				List<Smilies> smiliesList = new ArrayList<Smilies>();
+				while (enumeration.hasNext())
 				{
-					Smilie smilie = ResultsMapper.mapResult(Smilie.class, data);
-					smilies.getSmilies().add(smilie);
+					Map.Entry<String, Object> entry = enumeration.next();
+					Object[] smiliesArray = (Object[]) entry.getValue();
+					Smilies smilies = new Smilies(entry.getKey());
+					for (Object object : smiliesArray)
+					{
+						Smilie smilie = ResultsMapper.mapResult(Smilie.class, (HashMap<String, Object>) object);
+						smilies.getSmilies().add(smilie);
+					}
+					smiliesList.add(smilies);
 				}
-				catch (Exception e)
-				{
-					throw new RuntimeException(
-							"ECCEZIONE DURANTE IL MAPPING DEL RISULTATO");
-				}
+				return smiliesList;
 			}
-			smiliesList.add(smilies);
+			catch (Exception e)
+			{
+				throw new RuntimeException("Si è verificato un errore durante il mapping", e);
+			}
 		}
-
-		return smiliesList;
+		else
+		{
+			throw new UnsupportedFunction();
+		}
 	}
 }

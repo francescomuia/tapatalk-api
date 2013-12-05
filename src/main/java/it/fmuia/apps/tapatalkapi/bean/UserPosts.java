@@ -57,8 +57,6 @@ public class UserPosts
 	@PropertyName(name = "post_title")
 	private String postTitle;
 
-
-
 	public String getForumId()
 	{
 		return forumId;
@@ -185,6 +183,76 @@ public class UserPosts
 		builder.append(shortContent);
 		builder.append("]");
 		return builder.toString();
+	}
+
+	public String getPostAuthorId()
+	{
+		return postAuthorId;
+	}
+
+	public void setPostAuthorId(String postAuthorId)
+	{
+		this.postAuthorId = postAuthorId;
+	}
+
+	public String getIconUrl()
+	{
+		return iconUrl;
+	}
+
+	public void setIconUrl(String iconUrl)
+	{
+		this.iconUrl = iconUrl;
+	}
+
+	public String getTimestamp()
+	{
+		return timestamp;
+	}
+
+	public void setTimestamp(String timestamp)
+	{
+		this.timestamp = timestamp;
+	}
+
+	public String getPostAuthorName()
+	{
+		return postAuthorName;
+	}
+
+	public void setPostAuthorName(String postAuthorName)
+	{
+		this.postAuthorName = postAuthorName;
+	}
+
+	public boolean isApproved()
+	{
+		return isApproved;
+	}
+
+	public void setApproved(boolean isApproved)
+	{
+		this.isApproved = isApproved;
+	}
+
+	public boolean isCanDelete()
+	{
+		return canDelete;
+	}
+
+	public void setCanDelete(boolean canDelete)
+	{
+		this.canDelete = canDelete;
+	}
+
+	public String getPostTitle()
+	{
+		return postTitle;
+	}
+
+	public void setPostTitle(String postTitle)
+	{
+		this.postTitle = postTitle;
 	}
 
 }
